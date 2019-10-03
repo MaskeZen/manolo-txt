@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+
+<body>
+    <div>
+        <h1>Lectura de Archivo</h1>
+
+        <div>
+            <label for="archivo_1">Archivo 1</label><br>
+            <input id="file" class="archivo" type="file" name="archivo_1">
+        </div>
+        <div>
+            <label for="archivo_2">Archivo 2</label><br>
+            <input id="file_2" class="archivo" type="file" name="archivo_2">
+        </div>
+        <div>
+            <label for="archivo_3">Archivo 3</label><br>
+            <input id="file_3" class="archivo" type="file" name="archivo_3">
+        </div>
+        <br>
+
+        <!-- <button onclick="agregarArchivo()">Agregar Archvio</button> -->
+        <button onclick="procesarArchivos()">Procesar</button>
+
+        <div id="resultado">
+            <h2>Resultado</h2>
+
+        </div>
+    </div>
+
+    <script>
+        let textFile = null
+        let archivosArr = []
+
+        let leerArchivo = archivo => {
+            console.log('archivo: ', archivo)
+            return new Promise((resolve, reject) => {
+                let reader = new FileReader();
+                reader.onload = progressEvent => {
+                    console.log('procesado archivo: ', archivo)
+                    archivosArr.push(reader.result.split('\n'))
+                    resolve()
+                };
+
+                reader.readAsText(archivo)
+            }
+            )
+        }
+
+        let leerArchivos = () => new Promise((resolve, reject) => {
+            let archivosProcesados = 0;
+            let archivos = Array.from(
+                document.getElementsByClassName('archivo'),
+                input => input.files[0]
+            )
+
+            archivos = archivos.filter(archivo => archivo)
+            archivos.forEach(archivo => {
+                leerArchivo(archivo).then(() => {
+                    archivosProcesados++
+                    console.log("archivosProcesados", archivosProcesados)
+                    if (archivosProcesados == archivos.length) {
+                        resolve()
+                    }
+                })
+            })
+        }
+        )
+
+        let procesarArchivos = () => {
+            leerArchivos().then(() => {
+                console.log(archivosArr)
+                let texto = ""
+                console.log("archivosArr.length", archivosArr.length)
+                for (let linea = 0; archivosArr.length > 0; linea++) {
+                    archivosArr = archivosArr.filter(archivo => archivo.length > linea)
+                    archivosArr.forEach(archivo => {
+                        if (archivo.length >= linea) {
+                            console.log("se agrega una linea")
+                            texto += archivo[linea] + "\n"
+                        } else {
+                            console.log("se remueve el archivo")
+                            archivosArr.pop()
+                        }
+                    })
+                }
+                addLink(texto)
+            }
+            )
+        }
+
+        function generarUrl(text) {
+            let data = new Blob([text], { type: 'text/plain' })
+            // En caso de querer eliminar el enlace para liberar memoria.
+            if (textFile !== null) {
+                window.URL.revokeObjectURL(textFile);
+            }
+            textFile = window.URL.createObjectURL(data);
+            // retorna la URL
+            return textFile;
+        }
+
+        function addLink(texto) {
+            let link = document.createElement("a")
+            link.title = 'descargar Resultado'
+            link.href = generarUrl(texto)
+            link.target = "_blank"
+            link.appendChild(document.createTextNode("Resultado"))
+
+            document.getElementById("resultado").appendChild(link)
+        }
+
+    </script>
+</body>
+
+</html>
