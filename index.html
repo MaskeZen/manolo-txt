@@ -5,37 +5,65 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Document</title>
+    <title>Manolo txt</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.5/css/bulma.min.css">
 </head>
 
 <body>
-    <div>
-        <h1>Lectura de Archivo</h1>
+    <section class="section content">
+        <div class="container">
+            <h1>Lectura de Archivo</h1>
+            <div class="columns">
+                <div class="column">
+                    <div class="field">
+                        <label for="archivo_1">Archivo 1</label>
+                        <div class="controls">
+                            <input id="file" class="archivo" type="file" name="archivo_1">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="archivo_2">Archivo 2</label>
+                        <div class="controls">
+                            <input id="file_2" class="archivo" type="file" name="archivo_2">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="archivo_3">Archivo 3</label>
+                        <div class="controls">
+                            <input id="file_3" class="archivo" type="file" name="archivo_3">
+                        </div>
+                    </div>
 
-        <div>
-            <label for="archivo_1">Archivo 1</label><br>
-            <input id="file" class="archivo" type="file" name="archivo_1">
-        </div>
-        <div>
-            <label for="archivo_2">Archivo 2</label><br>
-            <input id="file_2" class="archivo" type="file" name="archivo_2">
-        </div>
-        <div>
-            <label for="archivo_3">Archivo 3</label><br>
-            <input id="file_3" class="archivo" type="file" name="archivo_3">
-        </div>
-        <br>
+                    <div class="field">
+                        <div class="controls">
+                            <button class="button is-link" onclick="procesarArchivos()">Procesar</button>
+                        </div>
+                        <!-- <button onclick="agregarArchivo()">Agregar Archvio</button> -->
+                    </div>
+                </div>
 
-        <!-- <button onclick="agregarArchivo()">Agregar Archvio</button> -->
-        <button onclick="procesarArchivos()">Procesar</button>
+                <div class="column">
+                    <div id="resultado" >
+                        <h2>Resultado</h2>
+        
+                    </div>
+                </div>
+            </div>
+            
 
-        <div id="resultado">
-            <h2>Resultado</h2>
+            <br>
 
+            
+
+            
         </div>
-    </div>
+
+
+    </section>
 
     <script>
+        let header = "#EXTM3U\n"
+        let separador = "#EXTINF:"
         let textFile = null
         let archivosArr = []
 
@@ -45,13 +73,13 @@
                 let reader = new FileReader();
                 reader.onload = progressEvent => {
                     console.log('procesado archivo: ', archivo)
-                    archivosArr.push(reader.result.split('\n'))
+                    let result = reader.result.replace('#EXTM3U', '')
+                    archivosArr.push(result.split(separador))
                     resolve()
                 };
 
                 reader.readAsText(archivo)
-            }
-            )
+            })
         }
 
         let leerArchivos = () => new Promise((resolve, reject) => {
@@ -71,33 +99,37 @@
                     }
                 })
             })
-        }
-        )
+        })
 
         let procesarArchivos = () => {
             leerArchivos().then(() => {
-                console.log(archivosArr)
-                let texto = ""
-                console.log("archivosArr.length", archivosArr.length)
+                console.log("archivosArr", archivosArr)
+                let texto = header
+
                 for (let linea = 0; archivosArr.length > 0; linea++) {
                     archivosArr = archivosArr.filter(archivo => archivo.length > linea)
+
                     archivosArr.forEach(archivo => {
                         if (archivo.length >= linea) {
-                            console.log("se agrega una linea")
-                            texto += archivo[linea] + "\n"
+                            if (!isEmptyOrSpaces(archivo[linea])) {
+                                texto += separador + archivo[linea]
+                                if (archivo[linea].indexOf("\n") < 0) {
+                                    texto += "\n"
+                                }
+                            }
                         } else {
-                            console.log("se remueve el archivo")
                             archivosArr.pop()
                         }
                     })
                 }
                 addLink(texto)
-            }
-            )
+            })
         }
 
         function generarUrl(text) {
-            let data = new Blob([text], { type: 'text/plain' })
+            let data = new Blob([text], {
+                type: 'text/plain'
+            })
             // En caso de querer eliminar el enlace para liberar memoria.
             if (textFile !== null) {
                 window.URL.revokeObjectURL(textFile);
@@ -108,15 +140,28 @@
         }
 
         function addLink(texto) {
-            let link = document.createElement("a")
-            link.title = 'descargar Resultado'
-            link.href = generarUrl(texto)
-            link.target = "_blank"
-            link.appendChild(document.createTextNode("Resultado"))
+            let link = document.getElementById('resultado-link')
 
-            document.getElementById("resultado").appendChild(link)
+            if (!link) {
+                link = document.createElement("a")
+                link.title = 'descargar Resultado'
+                link.id = 'resultado-link'
+                link.target = "_blank"
+                link.appendChild(document.createTextNode("Resultado"))
+                document.getElementById("resultado").appendChild(link)
+            }
+
+            link.href = generarUrl(texto)
         }
 
+        function addInput() {
+
+        }
+
+        function isEmptyOrSpaces(str) {
+            console.log(str)
+            return str === null || str === "\n" || str.match(/^ *$/) !== null;
+        }
     </script>
 </body>
 
